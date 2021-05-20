@@ -1141,6 +1141,7 @@ define('wcDocker/panel',[
             this._isVisible = false;
             this._isLayoutMember = true;
             this._isRenamable = false;
+            this._canMaximise = false;
 
             if(typeof this._options.isLayoutMember != 'undefined' ||
                 this._options.isLayoutMember != null) {
@@ -1700,6 +1701,24 @@ define('wcDocker/panel',[
             return this._isRenamable;
         },
 
+        maximisable: function(enabled) {
+            if (typeof enabled !== 'undefined') {
+                this._canMaximise = enabled ? true : false;
+                if (this._parent) {
+                    this._parent.__update();
+                }
+            }
+
+            return this._canMaximise;
+        },
+
+        maximise: function() {
+            var docker = this.docker();
+            if (docker && this._parent && this._parent.instanceOf('wcFrame')) {
+               docker.__maximiseFrame(this._parent);
+            }
+        },
+
         /**
          * Forces the window to close.
          * @function module:wcPanel#close
@@ -1876,6 +1895,10 @@ define('wcDocker/panel',[
             }
             if (this._options.faicon) {
                 this.faicon(this._options.faicon);
+            }
+            if(typeof this._options.canMaximise != 'undefined' ||
+                this._options.canMaximise != null) {
+                this._canMaximise = this._options.canMaximise;
             }
         },
 
@@ -3158,6 +3181,7 @@ define('wcDocker/frame',[
             this.$container = $(container);
             this._parent = parent;
             this._isFloating = isFloating;
+            this._isMaximize = false;
 
             /**
              * The outer frame element.
@@ -3172,6 +3196,7 @@ define('wcDocker/frame',[
             this.$tabLeft = null;
             this.$tabRight = null;
             this.$close = null;
+            this.$maximise = null;
             this.$collapse = null;
             this.$top = null;
             this.$bottom = null;
@@ -3502,7 +3527,8 @@ define('wcDocker/frame',[
             this.$center = $('<div class="wcFrameCenter wcPanelBackground">');
             this.$tabLeft = $('<div class="wcFrameButton" title="Scroll tabs to the left." aria-label="Scroll left" tabindex="0"><span class="fa fa-chevron-left"></span></div>');
             this.$tabRight = $('<div class="wcFrameButton" title="Scroll tabs to the right." aria-label="Scroll right" tabindex="0"><span class="fa fa-chevron-right"></span></div>');
-            this.$close = $('<div class="wcFrameButton" title="Close the currently active panel tab" aria-label="Close panel" tabindex="0"><div class="fa fa-times"></div></div>');
+            this.$maximise = $('<div class="wcFrameButton" title="Maximize active panel tab" aria-label="Maximize Panel" tabindex="0"><div class="fa fa-expand-alt"></div></div>');
+            this.$close = $('<div class="wcFrameButton" title="Close the currently active panel tab" aria-label="Close panel" tabindex="1"><div class="fa fa-times"></div></div>');
 
             this.$collapse = $('<div class="wcFrameButton" title="Collapse the active panel"><div class="fa fa-download"></div>C</div>');
             this.$buttonBar = $('<div class="wcFrameButtonBar">');
@@ -3512,7 +3538,9 @@ define('wcDocker/frame',[
             this.$tabBar.append(this.$tabButtonBar);
             this.$frame.append(this.$buttonBar);
             this.$buttonBar.append(this.$close);
+            this.$buttonBar.append(this.$maximise);
             this.$buttonBar.append(this.$collapse);
+
             this.$frame.append(this.$center);
 
             if (this._isFloating) {
@@ -3551,29 +3579,42 @@ define('wcDocker/frame',[
 
             // Floating windows manage their own sizing.
             if (this._isFloating) {
-                var left = (this._pos.x * width) - this._size.x / 2;
-                var top = (this._pos.y * height) - this._size.y / 2;
 
-                if (top < 0) {
-                    top = 0;
+                // If window is maximised, reset left & top
+                if(this._isMaximize) {
+                    top = left = 0;
+                    // getting height of whole body irrespective of any number of navbar
+                    height = $('body').height();
                 }
+                else {
 
-                if (left + this._size.x / 2 < 0) {
-                    left = -this._size.x / 2;
-                }
+                    var left = (this._pos.x * width) - this._size.x / 2;
+                    var top = (this._pos.y * height) - this._size.y / 2;
 
-                if (left + this._size.x / 2 > width) {
-                    left = width - this._size.x / 2;
-                }
+                    if (top < 0) {
+                        top = 0;
+                    }
 
-                if (top + parseInt(this.$center.css('top')) > height) {
-                    top = height - parseInt(this.$center.css('top'));
+                    if (left + this._size.x / 2 < 0) {
+                        left = -this._size.x / 2;
+                    }
+
+                    if (left + this._size.x / 2 > width) {
+                        left = width - this._size.x / 2;
+                    }
+
+                    if (top + parseInt(this.$center.css('top')) > height) {
+                        top = height - parseInt(this.$center.css('top'));
+                    }
+
+                    width = this._size.x;
+                    height = this._size.y;
                 }
 
                 this.$frame.css('left', left + 'px');
                 this.$frame.css('top', top + 'px');
-                this.$frame.css('width', this._size.x + 'px');
-                this.$frame.css('height', this._size.y + 'px');
+                this.$frame.css('width', width + 'px');
+                this.$frame.css('height', height + 'px');
             }
 
             if (width !== this._lastSize.x || height !== this._lastSize.y) {
@@ -3885,10 +3926,10 @@ define('wcDocker/frame',[
                 if (totalWidth > tabWidth - buttonSize) {
                     this._canScrollTabs = this._titleVisible;
                     if (this._canScrollTabs) {
-                        this.$tabButtonBar.append(this.$tabLeft);
                         this.$tabButtonBar.append(this.$tabRight);
-                        buttonSize += this.$tabRight.outerWidth();
+                        this.$tabButtonBar.append(this.$tabLeft);
                         buttonSize += this.$tabLeft.outerWidth();
+                        buttonSize += this.$tabRight.outerWidth();
                     }
 
                     var scrollLimit = totalWidth - (tabWidth - buttonSize) / 2;
@@ -3910,8 +3951,8 @@ define('wcDocker/frame',[
                     }
                 } else {
                     this._tabScrollPos = 0;
-                    this.$tabLeft.remove();
                     this.$tabRight.remove();
+                    this.$tabLeft.remove();
                 }
 
                 this.$tabScroll.stop().animate({left: -this._tabScrollPos + 'px'}, 'fast');
@@ -3928,9 +3969,10 @@ define('wcDocker/frame',[
             var tabButtonSize = 0;
             var panel = this.panel();
 
-            this.$tabLeft.remove();
             this.$tabRight.remove();
+            this.$tabLeft.remove();
             this.$close.hide();
+            this.$maximise.hide();
             this.$collapse.hide();
 
             while (this._buttonList.length) {
@@ -3945,6 +3987,10 @@ define('wcDocker/frame',[
                 this.$center.toggleClass('wcOverflowVisible', panel.overflowVisible());
 
                 if (!this.isCollapser() || this.isExpanded()) {
+                    if (panel.maximisable() && this._isFloating) {
+                        this.$maximise.show();
+                        buttonSize += this.$maximise.outerWidth();
+                    }
                     if (panel.closeable()) {
                         this.$close.show();
                         buttonSize += this.$close.outerWidth();
@@ -4073,8 +4119,8 @@ define('wcDocker/frame',[
                 }
 
                 if (this._canScrollTabs) {
-                    this.$tabButtonBar.append(this.$tabLeft);
                     this.$tabButtonBar.append(this.$tabRight);
+                    this.$tabButtonBar.append(this.$tabLeft);
 
                     tabButtonSize += this.$tabRight.outerWidth() + this.$tabLeft.outerWidth();
                 }
@@ -6270,11 +6316,10 @@ define('wcDocker/tabframe',[
             this._canScrollTabs = false;
             if (totalWidth > tabWidth - buttonSize) {
                 this._canScrollTabs = true;
-                this.$buttonBar.append(this.$tabLeft);
                 this.$buttonBar.append(this.$tabRight);
+                this.$buttonBar.append(this.$tabLeft);
                 buttonSize += this.$tabRight.outerWidth();
                 buttonSize += this.$tabLeft.outerWidth();
-
                 var scrollLimit = totalWidth - (tabWidth - buttonSize) / 2;
                 // If we are beyond our scroll limit, clamp it.
                 if (this._tabScrollPos > scrollLimit) {
@@ -6294,8 +6339,8 @@ define('wcDocker/tabframe',[
                 }
             } else {
                 this._tabScrollPos = 0;
-                this.$tabLeft.remove();
                 this.$tabRight.remove();
+                this.$tabLeft.remove();
             }
 
             this.$tabScroll.stop().animate({left: -this._tabScrollPos + 'px'}, 'fast');
@@ -6309,8 +6354,8 @@ define('wcDocker/tabframe',[
                 this.$center.toggleClass('wcScrollableY', layout._scrollable.y);
                 this.$center.toggleClass('wcOverflowVisible', layout._overflowVisible);
 
-                this.$tabLeft.remove();
                 this.$tabRight.remove();
+                this.$tabLeft.remove();
 
                 if (layout._closeable) {
                     this.$close.show();
@@ -6320,8 +6365,8 @@ define('wcDocker/tabframe',[
                 }
 
                 if (this._canScrollTabs) {
-                    this.$tabBar.append(this.$tabLeft);
                     this.$tabBar.append(this.$tabRight);
+                    this.$tabBar.append(this.$tabLeft);
 
                     buttonSize += this.$tabRight.outerWidth() + this.$tabLeft.outerWidth();
                 }
@@ -24005,6 +24050,13 @@ define('wcDocker/docker',[
                         }
                     }
 
+                    if(_.isEmpty(windowTypes)) {
+                        windowTypes[type.name] = {
+                            name: 'Nothing to add',
+                            disabled: true
+                        };
+                    }
+
                     var separatorIndex = 0;
                     var finalItems = {};
                     var itemList = itemListOrBuildFunc;
@@ -24782,6 +24834,9 @@ define('wcDocker/docker',[
                         self._ghost.update(mouse, !self._creatingPanelNoFloating);
                     }
                 } else if (self._draggingFrame && !self._draggingFrameTab) {
+                    if(self._draggingFrame._isMaximize) {
+                        return true;
+                    }
                     self._draggingFrame.__move(mouse);
                     self._draggingFrame.__update();
                 }
@@ -24915,6 +24970,8 @@ define('wcDocker/docker',[
                                 }, 10);
                                 e.stopPropagation();
                                 return;
+                            } else if(frame.$maximise && frame.$maximise[0] === this)  {
+                                self.__maximiseFrame(frame);
                             }
                         }
                     }
@@ -24977,6 +25034,10 @@ define('wcDocker/docker',[
                     if (frame.$tabRight[0] === this) {
                         frame._tabScrollPos += frame.$tabBar.width() / 2;
                         frame.__updateTabs();
+                        return;
+                    }
+                    if (frame.$maximise && frame.$maximise[0] === this) {
+                        self.__maximiseFrame(frame);
                         return;
                     }
 
@@ -25146,7 +25207,7 @@ define('wcDocker/docker',[
             // on mousedown for .wcFrameEdge
             function __onMouseDownResizeFrame(event) {
                 var mouse = self.__mouse(event);
-                if (mouse.which === 3) {
+                if (mouse.which === 3 || self._focusFrame._isMaximize) {
                     return true;
                 }
                 $('body').addClass('wcDisableSelection');
@@ -26041,6 +26102,26 @@ define('wcDocker/docker',[
             }
             this.removePanel(panel, dontDestroy);
             this.__update();
+        },
+
+        __maximiseFrame: function(frame) {
+
+            var $btnIcon = frame.$maximise.children('div');
+
+            if(!frame.$frame.hasClass('wcMaximize')) {
+                $btnIcon.removeClass('fa-expand-alt');
+                $btnIcon.addClass('fa-compress-alt');
+                frame._isMaximize = true;
+                frame.$frame.addClass('wcMaximize');
+            }
+            else {
+                $btnIcon.removeClass('fa-compress-alt');
+                $btnIcon.addClass('fa-expand-alt');
+                frame._isMaximize = false;
+                frame.$frame.removeClass('wcMaximize');
+            }
+            frame.__updateTabs();
+            frame.__update();
         },
 
         // Triggers a LAYOUT_CHANGED event on the docker

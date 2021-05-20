@@ -119,6 +119,7 @@ define([
             this._isVisible = false;
             this._isLayoutMember = true;
             this._isRenamable = false;
+            this._canMaximise = false;
 
             if(typeof this._options.isLayoutMember != 'undefined' ||
                 this._options.isLayoutMember != null) {
@@ -678,6 +679,24 @@ define([
             return this._isRenamable;
         },
 
+        maximisable: function(enabled) {
+            if (typeof enabled !== 'undefined') {
+                this._canMaximise = enabled ? true : false;
+                if (this._parent) {
+                    this._parent.__update();
+                }
+            }
+
+            return this._canMaximise;
+        },
+
+        maximise: function() {
+            var docker = this.docker();
+            if (docker && this._parent && this._parent.instanceOf('wcFrame')) {
+               docker.__maximiseFrame(this._parent);
+            }
+        },
+
         /**
          * Forces the window to close.
          * @function module:wcPanel#close
@@ -854,6 +873,10 @@ define([
             }
             if (this._options.faicon) {
                 this.faicon(this._options.faicon);
+            }
+            if(typeof this._options.canMaximise != 'undefined' ||
+                this._options.canMaximise != null) {
+                this._canMaximise = this._options.canMaximise;
             }
         },
 
