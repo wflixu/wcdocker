@@ -1302,18 +1302,6 @@ define([
             }
         },
 
-        pxToVW: function(value) {
-            var x = this.$container.width(),
-                result = (100*value)/x;
-            return result;
-        },
-
-        pxToVH: function(value) {
-            var y = this.$container.height(),
-                result = (100*value)/y;
-            return result;
-        },
-
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
 // Private Functions
 ///////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -1789,8 +1777,8 @@ define([
                                 }, 10);
                                 e.stopPropagation();
                                 return;
-                            } else if(frame.$maximizeRestore && frame.$maximizeRestore[0] === this)  {
-                                self.__maximizeRestore(frame);
+                            } else if(frame.$maximise && frame.$maximise[0] === this)  {
+                                self.__maximiseFrame(frame);
                             }
                         }
                     }
@@ -1855,8 +1843,8 @@ define([
                         frame.__updateTabs();
                         return;
                     }
-                    if (frame.$maximizeRestore && frame.$maximizeRestore[0] === this) {
-                        self.__maximizeRestore(frame);
+                    if (frame.$maximise && frame.$maximise[0] === this) {
+                        self.__maximiseFrame(frame);
                         return;
                     }
 
@@ -2026,7 +2014,7 @@ define([
             // on mousedown for .wcFrameEdge
             function __onMouseDownResizeFrame(event) {
                 var mouse = self.__mouse(event);
-                if (mouse.which === 3) {
+                if (mouse.which === 3 || self._focusFrame._isMaximize) {
                     return true;
                 }
                 $('body').addClass('wcDisableSelection');
@@ -2645,7 +2633,6 @@ define([
                 if (options && options.tabOrientation) {
                     frame.tabOrientation(options.tabOrientation);
                 }
-                frame.enableBtns(panel);
                 this._frameList.push(frame);
                 this._floatingList.push(frame);
                 this.__focus(frame);
@@ -2924,9 +2911,9 @@ define([
             this.__update();
         },
 
-        __maximizeRestore: function(frame) {
+        __maximiseFrame: function(frame) {
 
-            var $btnIcon = frame.$maximizeRestore.children('div');
+            var $btnIcon = frame.$maximise.children('div');
 
             if(!frame.$frame.hasClass('wcMaximize')) {
                 $btnIcon.removeClass('fa-expand-alt');
