@@ -674,10 +674,6 @@ html, body {
   border-radius: 20px;
 }
 
-.wcDisplayNone {
-    display: none !important;
-}
-
 .context-menu-list .context-menu-disabled {
   pointer-events: none;
   background-color: transparent;
