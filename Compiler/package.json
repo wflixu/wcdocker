@@ -37,7 +37,7 @@
     "ink-docstrap": "git+https://github.com/Lochemage/docstrap.git#deploy",
     "intern": "~3.0.3",
     "intern-geezer": "latest",
-    "jsdoc-amddcl": "git://github.com/mc007/jsdoc-amddcl#master",
+    "jsdoc-amddcl": "git://github.com/ibm-js/jsdoc-amddcl#master",
     "jsdoc": "^3.5.5"
   }
 }
