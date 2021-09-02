@@ -1,4 +1,5 @@
-(function () {/**
+(function () {
+/**
  * @license almond 0.3.2 Copyright jQuery Foundation and other contributors.
  * Released under MIT license, http://github.com/requirejs/almond/LICENSE
  */
@@ -3424,7 +3425,7 @@ define('wcDocker/frame',[
                     if (this.isCollapser()) {
                         this._curTab = -1;
                     } else if (this._curTab >= i) {
-                        this._curTab--;
+                        this._curTab = this.getCloseableTabIndex();
                     }
 
                     // Only null out the container if it is still attached to this frame.
@@ -3447,6 +3448,40 @@ define('wcDocker/frame',[
 
             this.__updateTabs();
             return this._panelList.length > 0;
+        },
+
+        /**
+         * Gets the index of tab which is closeable, if list does not contain any closeable tabs,
+         * it will return index of neighbor tab which is 1 less than the closing tab.
+         * This function is only useful for non-collapsible panels.
+         * @function module:wcFrame#getCloseableTabIndex
+         * @returns {Number} - returns closeableTabIndex
+         */
+        getCloseableTabIndex: function() {
+            var closeableTabIndex,
+              left = right = this._curTab;
+
+            while(closeableTabIndex == undefined) {
+                if(this._curTab == 0 && this._panelList.length == 1) { // When resetting layout, the placeholder panels are removed, & this condition is satisfied.
+                    closeableTabIndex = this._curTab;
+                }
+                else if(right < (this._panelList.length-1)) { // checking the closeable panels towards right from current tab
+                    if(this._panelList[right + 1].closeable()) {
+                        closeableTabIndex = right;
+                    }
+                    right = right + 1;
+                }
+                else if(left > 0) { // checking the closeable panels towards left from current tab
+                    if(this._panelList[left - 1].closeable()) {
+                        closeableTabIndex = left - 1;
+                    }
+                    left = left - 1;
+                }
+                else { // if above conditions gets exhausts, i.e. there are no enough closeable tabs, then go with default selection process
+                    closeableTabIndex = this._curTab > 0 ? this._curTab - 1 : this._curTab;
+                }
+            }
+            return closeableTabIndex;
         },
 
         /**
@@ -25237,6 +25272,7 @@ define('wcDocker/docker',[
                     }
 
                     var is_ghost = false;
+                    // If panels list contains only one panel don't move it is as ghost.
                     if(self._focusFrame._panelList.length > 1) {
                         for (var i = 0; i < self._frameList.length; ++i) {
                             if (self._focusFrame == self._frameList[i]) {
