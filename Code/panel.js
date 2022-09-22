@@ -308,6 +308,26 @@ define([
         },
 
         /**
+         * updates button in the panel for tooltip.
+         * @function module:wcPanel#updateButton
+         * @param {String} name - Button name to be updated
+         * @param {Object} data - object with details to update.
+         * @returns {Boolean} - Success or failure.
+         */
+        updateButton: function (name, data) {
+            for (var i = 0; i < this._buttonList.length; ++i) {
+                if (this._buttonList[i].name === name) {
+                    Object.assign(this._buttonList[i], data)
+                }
+            }
+            if (this._parent && this._parent.instanceOf('wcFrame')) {
+                this._parent.__update();
+                return true;
+            }
+            return false;
+        },
+
+        /**
          * Gets, or Sets the current toggle state of a custom button that was
          * added using [wcPanel.addButton]{@link module:wcPanel#addButton}.
          * @function module:wcPanel#buttonState

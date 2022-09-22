@@ -1,5 +1,4 @@
-(function () {
-/**
+(function () {/**
  * @license almond 0.3.2 Copyright jQuery Foundation and other contributors.
  * Released under MIT license, http://github.com/requirejs/almond/LICENSE
  */
@@ -1325,6 +1324,26 @@ define('wcDocker/panel',[
 
                     return true;
                 }
+            }
+            return false;
+        },
+
+        /**
+         * updates button in the panel for tooltip.
+         * @function module:wcPanel#updateButton
+         * @param {String} name - Button name to be updated
+         * @param {Object} data - object with details to update.
+         * @returns {Boolean} - Success or failure.
+         */
+        updateButton: function (name, data) {
+            for (var i = 0; i < this._buttonList.length; ++i) {
+                if (this._buttonList[i].name === name) {
+                    Object.assign(this._buttonList[i], data)
+                }
+            }
+            if (this._parent && this._parent.instanceOf('wcFrame')) {
+                this._parent.__update();
+                return true;
             }
             return false;
         },
@@ -3579,12 +3598,12 @@ define('wcDocker/frame',[
             this.$tabBar = $('<div class="wcFrameTitleBar">');
             this.$tabScroll = $('<div class="wcTabScroller">');
             this.$center = $('<div class="wcFrameCenter wcPanelBackground">');
-            this.$tabLeft = $('<div class="wcFrameButton" title="Scroll tabs to the left." aria-label="Scroll left" tabindex="0"><span class="fa fa-chevron-left"></span></div>');
-            this.$tabRight = $('<div class="wcFrameButton" title="Scroll tabs to the right." aria-label="Scroll right" tabindex="0"><span class="fa fa-chevron-right"></span></div>');
-            this.$maximise = $('<div class="wcFrameButton" title="Maximize active panel tab" aria-label="Maximize Panel" tabindex="0"><div class="fa fa-expand-alt"></div></div>');
-            this.$close = $('<div class="wcFrameButton" title="Close the currently active panel tab" aria-label="Close panel" tabindex="1"><div class="fa fa-times"></div></div>');
+            this.$tabLeft = $('<div class="wcFrameButton" title="Scroll tabs to the left." aria-label="Scroll left" data-toggle="tooltip" tabindex="0"><span class="fa fa-chevron-left"></span></div>');
+            this.$tabRight = $('<div class="wcFrameButton" title="Scroll tabs to the right." aria-label="Scroll right" data-toggle="tooltip" tabindex="0"><span class="fa fa-chevron-right"></span></div>');
+            this.$maximise = $('<div class="wcFrameButton" title="Maximize" aria-label="Maximize Panel" data-toggle="tooltip" tabindex="0"><div class="fa fa-expand-alt"></div></div>');
+            this.$close = $('<div class="wcFrameButton" title="Close" aria-label="Close panel" data-toggle="tooltip" tabindex="1"><div class="fa fa-times"></div></div>');
 
-            this.$collapse = $('<div class="wcFrameButton" title="Collapse the active panel"><div class="fa fa-download"></div>C</div>');
+            this.$collapse = $('<div class="wcFrameButton" title="Collapse the active panel" data-toggle="tooltip"><div class="fa fa-download"></div>C</div>');
             this.$buttonBar = $('<div class="wcFrameButtonBar">');
             this.$tabButtonBar = $('<div class="wcFrameButtonBar">');
 
@@ -4142,6 +4161,8 @@ define('wcDocker/frame',[
                     for (var i = 0; i < panel._buttonList.length; ++i) {
                         var buttonData = panel._buttonList[i];
                         var $button = $('<div>');
+                        var $shortcutKeyContainer = $('<div class="wcTooltip-shortcut">');
+                        var $tooltipContainer = $('<div>')
                         var buttonClass = buttonData.className;
                         $button.addClass('wcFrameButton');
                         if (buttonData.parentClass)
@@ -4161,6 +4182,19 @@ define('wcDocker/frame',[
                         $button.text(buttonData.text);
                         if(buttonData.ariaLabel) {
                             $button.attr('aria-label', buttonData.ariaLabel);
+                        }
+                        //atribute to display tooltip
+                        $button.attr('data-toggle','tooltip')
+                        //to display tooltip with shortcut
+                        if(buttonData.key){
+                            $.each(buttonData.key,function(index,data) {
+                                var child = $('<div class="wcTooltip-shortcut-key">')
+                                child.text(data)
+                                $shortcutKeyContainer.append(child)
+                            })
+                            $tooltipContainer.text(buttonData.tip)
+                            $tooltipContainer.append($shortcutKeyContainer)
+                            $button.attr('title',$tooltipContainer.html())
                         }
                         if (buttonClass) {
                             $button.prepend($('<div class="' + buttonClass + '">'));
@@ -4197,6 +4231,14 @@ define('wcDocker/frame',[
                 }
 
                 panel.__update();
+
+                //enabling tooltip after panel creation
+                $('[data-toggle="tooltip"]').tooltip({
+                    trigger: 'hover',
+                    html: true
+                }).on('click mousedown mouseup', function () {
+                    $('[data-toggle="tooltip"]').tooltip('hide');
+                });
 
                 this.$center.scrollLeft(panel._scroll.x);
                 this.$center.scrollTop(panel._scroll.y);
