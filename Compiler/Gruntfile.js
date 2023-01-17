@@ -155,9 +155,7 @@ module.exports = function (grunt) {
 
                     paths: {
                         "wcDocker":"../Code/",
-                        "dcl":"../node_modules/dcl",
-                        "bootstrap":"../node_modules/bootstrap/dist/js/bootstrap.bundle.min",
-                        "jquery":"../node_modules/jquery/dist/jquery.min",
+                        "dcl":"../node_modules/dcl"
                     },
                     packages: [
                         {
@@ -189,13 +187,11 @@ module.exports = function (grunt) {
                         {
                             name: 'lodash',
                             location: '../node_modules/lodash-amd'   //points to node_modules/dcl
-                        },
+                        }
                     ],
                     paths: {
                         "wcDocker":"../Code/",
-                        "dcl":"../node_modules/dcl",
-                        "bootstrap":"../node_modules/bootstrap/dist/js/bootstrap.bundle.min",
-                        "jquery":"../node_modules/jquery/dist/jquery.min",
+                        "dcl":"../node_modules/dcl"
                     }
 
                 }

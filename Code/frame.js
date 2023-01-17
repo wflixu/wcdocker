@@ -2,8 +2,7 @@
 define([
     "dcl/dcl",
     "./types",
-    "./base",
-    "bootstrap"
+    "./base"
 ], function (dcl, wcDocker, base) {
 
     /**
@@ -1030,7 +1029,7 @@ define([
                     this.$buttonBar.find('[data-toggle="tooltip"]').tooltip({
                         trigger: 'hover',
                         html: true
-                    })
+                    })  
                 }
 
                 if (this._canScrollTabs) {
